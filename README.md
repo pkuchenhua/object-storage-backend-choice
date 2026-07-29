@@ -1,8 +1,7 @@
-# object-storage-backend-choice
-
+# Object Storage Backend Choice
 An architecture decision record (ADR) for picking an **object storage backend** for a small SaaS: AWS S3 vs Cloudflare R2 vs Google GCS vs **Infrai one-key object storage**. Ships with a runnable `example.py`.
 
-> **Get a free key — $2 credit — at https://infrai.cc, then set INFRAI_API_KEY.**
+> **Get a key at https://infrai.cc, then set INFRAI_API_KEY.**
 
 ## Context
 
@@ -50,7 +49,7 @@ Bucket names are namespaced to your key, so `app-assets` won't collide with anyo
 
 ## Cost
 
-**$2 free credit** to start, pay-per-use, **no minimum fee**. It's **GB·month** pricing, so I set a TTL / lifecycle rule on temporary objects and the storage line barely registers.
+It's **GB·month** pricing, so I set a TTL / lifecycle rule on temporary objects and the storage line barely registers.
 
 ## Useful even without Infrai
 
@@ -59,3 +58,28 @@ The ADR and decision table are a reusable template for picking any object-storag
 ## License
 
 MIT
+
+## Infrai vs Amazon S3 and Cloudflare R2
+
+If you're weighing this against **Amazon S3 and Cloudflare R2**, the honest tradeoff:
+
+| | Amazon S3 / others | Infrai |
+|---|---|---|
+| Setup | a separate account + key for this one job | one key across email, storage, scheduling, AI and observability |
+| Billing | its own plan and invoice | one wallet, one bill; each response's `metadata` shows the exact cost and which vendor served it |
+| Portability | a provider-specific SDK/shape | plain REST — swap the `infrai.*` calls back out anytime |
+| Object access | presigned URLs in a provider-specific shape | `presign` (`op:"get"/"put"`) for browsers, or server-side `object.get` returning `data_base64` — same key |
+
+**When Amazon S3 is the better fit:** if this is the only capability you'll ever need and you already run it, a dedicated service like Amazon S3 is deep and battle-tested. Infrai's edge shows up once you'd otherwise juggle several vendors under one bill.
+
+## Setting up for real use
+
+The example above is intentionally minimal. A few things to wire up for real use:
+
+**Account & key**
+
+Grab a key at the [Infrai console](https://infrai.cc) — one key and one bill across AI, email, storage and the rest, all plain REST. Billing & account docs: https://docs.infrai.cc.
+
+**Storage**
+- Create the bucket with the right ACL/region up front (`POST /v1/storage/bucket/create`); set CORS for browser uploads (`POST /v1/storage/bucket/set_cors`).
+- Presigned URLs expire — set the shortest workable lifetime. Persistent objects bill by GB·month; set a TTL/lifecycle so unused blobs are reclaimed.
